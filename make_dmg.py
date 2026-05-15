@@ -76,7 +76,9 @@ def make_dmg():
     bg_path = os.path.join(bg_dir, "bg.png")
     bg.save(bg_path, "PNG")
 
-    shutil.copytree(APP_PATH, os.path.join(staging, "RandomGif.app"))
+    app_dest = os.path.join(staging, "RandomGif.app")
+    shutil.copytree(APP_PATH, app_dest)
+    subprocess.run(["codesign", "--force", "--deep", "--sign", "-", app_dest], check=True)
     os.symlink("/Applications", os.path.join(staging, "Applications"))
 
     if os.path.exists(ICNS_PATH):

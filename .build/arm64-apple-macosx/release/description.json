@@ -17,7 +17,7 @@
 
   ],
   "swiftCommands" : {
-    "C.RandomGif-arm64-apple-macosx26.0-release.module" : {
+    "C.RandomGif-arm64-apple-macosx-release.module" : {
       "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
       "fileList" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/sources",
       "importPath" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/Modules",
