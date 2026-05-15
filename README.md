@@ -1,6 +1,12 @@
 # RandomGif
 
+<img src="assets/app_icon.png" width="128" alt="RandomGif icon">
+
 A macOS menu bar app that serves up random animated GIFs on demand. Click the icon in your menu bar, get a GIF, click it to copy to your clipboard.
+
+![RandomGif in action](assets/ad_01.png)
+
+![Right-click menu](assets/ad_02.png)
 
 Made by [John Kappa](https://johnkappa.com)
 
@@ -22,8 +28,8 @@ Requires **macOS 13 (Ventura)** or later. Universal binary — runs on both Appl
 Clone and build directly — requires Xcode Command Line Tools:
 
 ```bash
-git clone https://github.com/j-kappa/mac_random_gif.git
-cd mac_random_gif
+git clone https://github.com/j-kappa/random_gif.git
+cd random_gif
 ./run.sh
 ```
 
