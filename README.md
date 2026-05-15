@@ -17,6 +17,18 @@ open /Applications/RandomGif.app
 
 Requires **macOS 13 (Ventura)** or later. Universal binary — runs on both Apple Silicon and Intel Macs.
 
+### Install via Terminal
+
+Clone and build directly — requires Xcode Command Line Tools:
+
+```bash
+git clone https://github.com/j-kappa/mac_random_gif.git
+cd mac_random_gif
+./run.sh
+```
+
+This builds a universal binary, installs it to `~/Applications/RandomGif.app`, and launches it.
+
 ## Features
 
 - Lives in the menu bar — no Dock icon, no window clutter
