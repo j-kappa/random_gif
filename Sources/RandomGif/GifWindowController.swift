@@ -1,0 +1,400 @@
+import AppKit
+import WebKit
+
+private extension NSColor {
+    var hexString: String {
+        let c = usingColorSpace(.sRGB) ?? self
+        let r = Int(c.redComponent * 255)
+        let g = Int(c.greenComponent * 255)
+        let b = Int(c.blueComponent * 255)
+        let a = c.alphaComponent
+        if a < 1 {
+            return "rgba(\(r),\(g),\(b),\(String(format: "%.2f", a)))"
+        }
+        return String(format: "#%02x%02x%02x", r, g, b)
+    }
+}
+
+// MARK: - In-memory GIF scheme handler
+
+/// Serves preloaded GIF bytes to WKWebView via giflocal:// so the
+/// web view never makes a second network request.
+private class GifSchemeHandler: NSObject, WKURLSchemeHandler {
+    var gifData: Data?
+
+    func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
+        guard let data = gifData else {
+            task.didFailWithError(URLError(.resourceUnavailable))
+            return
+        }
+        let url = task.request.url ?? URL(string: "giflocal://gif")!
+        let response = URLResponse(
+            url: url,
+            mimeType: "image/gif",
+            expectedContentLength: data.count,
+            textEncodingName: nil
+        )
+        task.didReceive(response)
+        task.didReceive(data)
+        task.didFinish()
+    }
+
+    func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
+}
+
+// MARK: - Transparent click-capture overlay
+
+private class ClickCaptureView: NSView {
+    var onClicked: (() -> Void)?
+    var isEnabled = true
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        onClicked?()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+}
+
+// MARK: - Window Controller
+
+class GifWindowController: NSWindowController, WKNavigationDelegate {
+
+    private static let windowSize = CGSize(width: 400, height: 370)
+    private static let gifMargin: CGFloat = 12
+    private static let bottomBarH: CGFloat = 52
+
+    private var webView: WKWebView!
+    private var schemeHandler: GifSchemeHandler!
+    private var spinner: NSProgressIndicator!
+    private var statusLabel: NSTextField!
+    private var clickCapture: ClickCaptureView!
+    private var currentData: Data?
+
+    // MARK: - Init
+
+    convenience init() {
+        let size = GifWindowController.windowSize
+        let panel = NSPanel(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.level = .popUpMenu
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = true
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        self.init(window: panel)
+        buildUI()
+    }
+
+    // MARK: - UI
+
+    private func buildUI() {
+        guard let content = window?.contentView else { return }
+        let bounds = content.bounds
+        let margin = GifWindowController.gifMargin
+        let bottomH = GifWindowController.bottomBarH
+
+        // Root container — rounded + clipped
+        let container = NSView(frame: bounds)
+        container.autoresizingMask = [.width, .height]
+        container.wantsLayer = true
+        container.layer?.cornerRadius = 18
+        container.layer?.masksToBounds = true
+        content.addSubview(container)
+
+        let fx = NSVisualEffectView(frame: bounds)
+        fx.autoresizingMask = [.width, .height]
+        fx.material = .hudWindow
+        fx.state = .active
+        fx.blendingMode = .behindWindow
+        container.addSubview(fx)
+
+        let tint = NSView(frame: bounds)
+        tint.autoresizingMask = [.width, .height]
+        tint.wantsLayer = true
+        tint.layer?.backgroundColor = NSColor(white: 0.04, alpha: 0.55).cgColor
+        container.addSubview(tint)
+
+        let gifW = bounds.width - margin * 2
+        let gifH = bounds.height - bottomH - margin
+        let gifFrame = NSRect(x: margin, y: bottomH, width: gifW, height: gifH)
+
+        let gifCard = NSView(frame: gifFrame)
+        gifCard.wantsLayer = true
+        gifCard.layer?.cornerRadius = 13
+        gifCard.layer?.masksToBounds = true
+        gifCard.layer?.borderColor = NSColor.white.withAlphaComponent(0.08).cgColor
+        gifCard.layer?.borderWidth = 0.5
+        container.addSubview(gifCard)
+
+        let backdrop = NSView(frame: gifCard.bounds)
+        backdrop.wantsLayer = true
+        backdrop.layer?.backgroundColor = NSColor.black.cgColor
+        gifCard.addSubview(backdrop)
+
+        // WebView with custom giflocal:// scheme — no second network fetch
+        let webConfig = WKWebViewConfiguration()
+        schemeHandler = GifSchemeHandler()
+        webConfig.setURLSchemeHandler(schemeHandler, forURLScheme: "giflocal")
+
+        webView = WKWebView(frame: gifCard.bounds, configuration: webConfig)
+        webView.autoresizingMask = [.width, .height]
+        webView.underPageBackgroundColor = .clear
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.alphaValue = 0
+        webView.navigationDelegate = self
+        gifCard.addSubview(webView)
+
+        spinner = NSProgressIndicator()
+        spinner.style = .spinning
+        spinner.controlSize = .regular
+        spinner.isIndeterminate = true
+        let sSize: CGFloat = 32
+        spinner.frame = NSRect(
+            x: (gifCard.bounds.width - sSize) / 2,
+            y: (gifCard.bounds.height - sSize) / 2,
+            width: sSize, height: sSize
+        )
+        spinner.appearance = NSAppearance(named: .vibrantDark)
+        gifCard.addSubview(spinner)
+
+        clickCapture = ClickCaptureView(frame: gifCard.bounds)
+        clickCapture.autoresizingMask = [.width, .height]
+        clickCapture.isEnabled = false
+        clickCapture.onClicked = { [weak self] in self?.handleGifClick() }
+        gifCard.addSubview(clickCapture)
+
+        gifCard.addSubview(clickCapture)
+
+        // Bottom bar — branding left, status right
+        let separator = NSView(frame: NSRect(x: margin, y: bottomH - 0.5, width: bounds.width - margin * 2, height: 0.5))
+        separator.wantsLayer = true
+        separator.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.1).cgColor
+        container.addSubview(separator)
+
+        let brandingSvg = gifSvgString(fill: "white")
+        let iconH: CGFloat = 13
+        if let svgData = brandingSvg.data(using: .utf8),
+           let svgImg = NSImage(data: svgData) {
+            let aspect = svgImg.size.width / svgImg.size.height
+            let iconW = iconH * aspect
+            let iconView = NSImageView(frame: NSRect(x: margin + 2, y: (bottomH - iconH) / 2, width: iconW, height: iconH))
+            iconView.image = svgImg
+            iconView.imageScaling = .scaleProportionallyUpOrDown
+            iconView.alphaValue = 0.35
+            container.addSubview(iconView)
+
+            let titleLabel = NSTextField(labelWithString: "RandomGif")
+            titleLabel.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+            titleLabel.textColor = NSColor.white.withAlphaComponent(0.35)
+            titleLabel.sizeToFit()
+            titleLabel.frame.origin = NSPoint(x: iconView.frame.maxX + 5, y: (bottomH - titleLabel.frame.height) / 2)
+            container.addSubview(titleLabel)
+        }
+
+        statusLabel = NSTextField(labelWithString: "")
+        let labelFont = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let labelH = labelFont.ascender - labelFont.descender + labelFont.leading
+        statusLabel.frame = NSRect(x: 0, y: (bottomH - labelH) / 2, width: bounds.width - margin - 2, height: labelH)
+        statusLabel.alignment = .right
+        statusLabel.font = labelFont
+        statusLabel.textColor = NSColor.white.withAlphaComponent(0.5)
+        statusLabel.isSelectable = false
+        container.addSubview(statusLabel)
+
+        spinner.startAnimation(nil)
+        statusLabel.stringValue = "Loading…"
+    }
+
+    // MARK: - Show
+
+    func showNear(rect buttonRect: NSRect) {
+        guard let window = window else { return }
+        let size = GifWindowController.windowSize
+
+        var x = buttonRect.midX - size.width / 2
+        var y = buttonRect.minY - size.height - 10
+
+        if let screen = NSScreen.main {
+            let sf = screen.visibleFrame
+            x = max(sf.minX + 8, min(x, sf.maxX - size.width - 8))
+            y = max(sf.minY + 8, y)
+        }
+
+        window.setFrameOrigin(NSPoint(x: x, y: y))
+        showWindow(nil)
+        loadGif()
+    }
+
+    // MARK: - Loading
+
+    private func loadGif() {
+        currentData = nil
+        clickCapture.isEnabled = false
+        webView.alphaValue = 0
+        spinner.isHidden = false
+        spinner.startAnimation(nil)
+        statusLabel.stringValue = "Loading…"
+
+        Task {
+            // Use preloaded data if available — usually instant
+            if let cached = await GifPreloader.shared.consume() {
+                displayGif(data: cached.data)
+                return
+            }
+
+            // Nothing preloaded yet — fetch fresh while showing spinner
+            do {
+                let url  = try await GifFetcher.fetchRandomGifURL()
+                let data = try await GifFetcher.fetchGifData(from: url)
+                displayGif(data: data)
+            } catch {
+                spinner.stopAnimation(nil)
+                spinner.isHidden = true
+                statusLabel.stringValue = "Couldn't load — try again"
+            }
+        }
+    }
+
+    /// Hands data to the scheme handler and loads the single-image HTML page.
+    private func displayGif(data: Data) {
+        currentData = data
+        schemeHandler.gifData = data
+        clickCapture.isEnabled = true
+
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+        img { width:100%; height:100%; object-fit:cover; display:block; }
+        </style>
+        </head>
+        <body><img src="giflocal://gif.gif"></body>
+        </html>
+        """
+        webView.loadHTMLString(html, baseURL: nil)
+        statusLabel.attributedStringValue = copyStatusString()
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        spinner.stopAnimation(nil)
+        spinner.isHidden = true
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.3
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            webView.animator().alphaValue = 1
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        spinner.stopAnimation(nil)
+        spinner.isHidden = true
+        statusLabel.stringValue = "Couldn't load — try again"
+    }
+
+    // MARK: - Clipboard
+
+    private func handleGifClick() {
+        guard let data = currentData else {
+            flash("Still loading…")
+            return
+        }
+
+        let filename = "gif_\(UUID().uuidString).gif"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+
+        guard (try? data.write(to: tempURL)) != nil else {
+            flash("Copy failed")
+            return
+        }
+
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.writeObjects([tempURL as NSURL])
+        pb.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+
+        flash("✓  Copied!")
+
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.08
+            webView.animator().alphaValue = 0.5
+        } completionHandler: {
+            DispatchQueue.main.async {
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = 0.15
+                    self.webView.animator().alphaValue = 1
+                }
+            }
+        }
+    }
+
+    private func flash(_ message: String) {
+        statusLabel.stringValue = message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
+            guard let self, self.currentData != nil else { return }
+            self.statusLabel.attributedStringValue = self.copyStatusString()
+        }
+    }
+
+    // MARK: - SVG helpers
+
+    private func gifSvgString(fill: String) -> String {
+        return """
+        <svg xmlns="http://www.w3.org/2000/svg" width="305" height="485" viewBox="0 0 305 485" fill="none">\
+        <path d="M123.656 482.788C117.284 486.77 112.106 485.376 108.124 478.606C106.531 476.217 105.734 474.027 105.734 472.036L103.942 463.673C103.544 457.7 102.748 451.727 101.553 445.754C100.358 439.78 98.9643 433.608 97.3713 427.237C97.3713 426.44 97.1722 425.644 96.7739 424.847C96.7739 424.449 96.7739 423.852 96.7739 423.055C96.7739 421.462 96.5748 420.268 96.1766 419.471C94.9818 413.498 91.7958 409.118 86.6186 406.33C83.0344 404.339 79.2511 402.547 75.2686 400.954C71.6844 398.963 67.901 397.171 63.9186 395.578L48.9843 388.41C45.7984 386.818 42.8115 384.229 40.0238 380.645C35.6431 375.867 31.6606 370.889 28.0764 365.712C24.4922 360.535 21.5053 354.96 19.1158 348.987C18.3193 346.598 17.3237 344.208 16.129 341.819C15.3325 339.43 14.536 337.04 13.7395 334.651C12.943 332.66 12.3456 330.669 11.9474 328.678C11.5492 326.687 10.9518 324.895 10.1553 323.302L6.57107 310.758C5.77458 309.165 5.37633 307.572 5.37633 305.98C4.97808 303.192 4.57984 300.604 4.18159 298.214C4.18159 295.427 3.78334 292.639 2.98685 289.852C2.5886 287.064 2.19036 284.277 1.79211 281.489C1.79211 278.702 1.79211 275.914 1.79211 273.127C1.79211 271.534 1.59299 270.339 1.19474 269.543C0.796493 263.968 0.59737 258.592 0.59737 253.415C0.59737 248.238 0.398247 243.061 0 237.885C0 234.699 0 231.513 0 228.327C0 225.142 0.199123 222.155 0.59737 219.367L2.38948 197.864C2.38948 196.669 2.38948 195.674 2.38948 194.877C2.78773 193.683 2.98685 192.687 2.98685 191.891C3.3851 186.714 3.78334 181.736 4.18159 176.957C4.97808 172.179 5.9737 167.4 7.16844 162.622C7.96493 161.427 8.36318 160.232 8.36318 159.038C8.36318 157.843 8.36318 156.648 8.36318 155.454C9.55792 151.073 10.5535 146.693 11.35 142.313C12.5448 137.534 13.5404 132.755 14.3369 127.977L17.9211 108.265C18.7176 105.079 19.315 101.894 19.7132 98.7079C20.5097 95.5222 21.3062 92.3364 22.1027 89.1507C25.2887 75.6114 30.8641 64.0631 38.829 54.5059C43.608 47.7362 49.1835 42.3603 55.5554 38.3781C60.3344 35.1924 65.1133 32.0066 69.8923 28.8209C75.0695 25.6352 80.2467 22.8477 85.4239 20.4584C90.9993 17.2726 96.7739 14.4851 102.748 12.0958C108.721 9.70653 114.894 7.51635 121.266 5.52527C124.054 4.72882 126.642 3.93239 129.032 3.13596C131.82 2.33952 134.607 1.74219 137.395 1.34398C142.174 0.149322 146.953 -0.248893 151.732 0.149342C156.511 0.149342 161.091 1.14488 165.471 3.13596C171.047 5.12704 175.826 7.71545 179.808 10.9012C181.8 12.494 183.791 14.0869 185.782 15.6798C188.172 16.8744 190.163 18.4673 191.756 20.4584C200.119 26.4316 205.495 34.5951 207.885 44.9487C208.283 46.5416 208.681 48.1344 209.079 49.7273C209.478 50.9219 209.677 52.5148 209.677 54.5059C210.075 61.6738 208.88 68.4435 206.093 74.8149C205.296 76.4078 204.301 78.1998 203.106 80.1909C202.309 81.7837 201.115 83.3766 199.522 84.9694C197.53 87.3587 195.539 89.9471 193.548 92.7347C191.955 95.124 190.163 97.5133 188.172 99.9026C184.587 103.885 182.795 108.862 182.795 114.836V151.87C182.795 153.463 182.596 155.056 182.198 156.648C182.198 157.843 182.198 159.237 182.198 160.83C181.8 162.821 181.6 165.011 181.6 167.4C181.6 169.391 181.6 171.382 181.6 173.373C181.6 175.365 182.397 175.962 183.99 175.165H185.782C186.977 174.767 187.972 174.568 188.769 174.568C189.964 174.568 190.959 174.369 191.756 173.971C197.729 171.98 203.703 170.586 209.677 169.79C215.651 168.595 221.823 167.798 228.195 167.4C233.771 166.604 239.147 166.604 244.324 167.4C249.501 167.798 254.679 168.595 259.856 169.79C263.44 170.984 266.825 172.378 270.011 173.971C273.595 175.165 276.781 176.957 279.569 179.347C281.56 180.94 283.552 182.732 285.543 184.723C287.534 186.316 289.127 188.108 290.322 190.099C293.109 194.081 295.3 198.262 296.893 202.642C298.884 206.625 299.88 210.806 299.88 215.186V215.784C300.676 219.766 301.074 223.748 301.074 227.73C301.074 231.712 300.676 235.694 299.88 239.677C299.481 242.066 299.083 244.455 298.685 246.844C298.287 248.836 297.888 251.026 297.49 253.415C296.694 256.999 295.698 260.583 294.503 264.167C293.707 267.751 292.91 271.335 292.114 274.919C291.716 276.512 291.317 278.104 290.919 279.697C290.919 280.892 290.919 282.286 290.919 283.879V318.523C290.919 321.709 291.118 324.895 291.517 328.081C291.915 331.266 292.313 334.452 292.711 337.638C293.109 339.629 293.508 341.62 293.906 343.611C294.702 345.602 295.3 347.593 295.698 349.584C295.698 350.381 296.495 351.575 298.088 353.168C300.079 355.159 301.274 357.35 301.672 359.739C301.672 360.933 301.871 361.73 302.269 362.128C303.862 365.712 304.659 369.893 304.659 374.672C304.659 376.265 304.46 377.858 304.061 379.451C304.061 381.043 304.26 382.835 304.659 384.826C305.455 387.216 304.858 389.406 302.867 391.397C302.07 392.193 301.473 393.189 301.074 394.384C300.676 395.578 300.079 396.773 299.282 397.968C298.088 400.357 296.495 402.547 294.503 404.538C293.309 404.936 292.313 405.733 291.517 406.927C290.72 408.122 289.924 409.118 289.127 409.914C285.941 413.498 282.158 414.693 277.777 413.498C277.379 413.498 276.781 413.299 275.985 412.901C275.587 412.901 275.188 412.901 274.79 412.901C271.206 412.503 268.02 411.308 265.232 409.317C262.843 407.724 260.453 405.733 258.064 403.344C257.267 402.149 256.272 400.954 255.077 399.76C254.28 398.167 253.285 396.773 252.09 395.578C250.895 393.985 249.9 392.193 249.103 390.202C248.705 388.211 248.108 386.419 247.311 384.826C245.718 379.251 243.926 373.477 241.935 367.504C240.342 361.531 239.147 355.558 238.351 349.584C237.554 344.009 236.558 338.434 235.364 332.859C234.169 326.886 233.373 320.913 232.974 314.939C232.178 311.754 231.78 308.966 231.78 306.577C230.983 304.984 230.585 304.188 230.585 304.188C228.992 304.984 227.996 305.581 227.598 305.98C223.615 310.758 219.235 315.537 214.456 320.315C209.677 324.696 205.097 329.275 200.716 334.054C199.92 335.249 198.924 336.443 197.729 337.638C196.933 338.434 196.136 339.231 195.34 340.027C192.95 342.416 190.561 344.806 188.172 347.195C185.782 349.186 183.592 351.376 181.6 353.766C180.007 354.96 178.614 356.155 177.419 357.35C176.224 358.544 174.83 359.54 173.237 360.336C172.441 361.133 171.644 361.929 170.848 362.725C170.051 363.522 169.255 364.318 168.458 365.115C166.865 366.708 165.272 368.3 163.679 369.893C162.485 371.088 160.892 372.283 158.9 373.477L156.511 375.867C150.139 381.043 143.767 385.623 137.395 389.605C130.625 393.189 127.24 398.963 127.24 406.927C127.24 409.317 127.24 411.706 127.24 414.095C127.24 416.485 127.439 418.874 127.837 421.263C127.837 421.661 127.837 421.861 127.837 421.861C128.235 421.861 128.435 422.06 128.435 422.458C128.833 430.024 129.231 437.59 129.629 445.156C130.426 453.121 130.625 461.085 130.227 469.049C129.828 470.244 129.629 471.837 129.629 473.828C128.833 477.412 126.842 480.398 123.656 482.788ZM120.071 313.147C127.24 316.731 134.209 316.532 140.979 312.55C142.174 311.356 143.17 310.559 143.966 310.161C147.152 307.772 150.139 305.382 152.927 302.993C155.714 300.205 158.502 297.617 161.29 295.228C164.078 292.838 166.666 290.449 169.056 288.06C171.445 285.272 174.034 282.684 176.821 280.295C180.007 277.109 183.193 273.724 186.379 270.14C189.565 266.556 192.552 262.972 195.34 259.388C197.331 256.999 198.924 254.411 200.119 251.623C201.712 249.632 202.708 247.243 203.106 244.455C203.106 241.668 201.911 240.672 199.522 241.469C197.53 241.867 195.539 242.265 193.548 242.663C191.557 243.061 189.565 244.057 187.574 245.65C185.185 247.243 182.596 248.836 179.808 250.428C177.419 252.021 174.83 253.813 172.043 255.804C171.246 256.601 170.45 257.795 169.653 259.388C168.857 262.176 168.06 265.561 167.264 269.543C167.264 272.33 167.064 274.919 166.666 277.308C166.666 279.697 166.467 282.087 166.069 284.476C164.874 290.051 162.086 293.635 157.706 295.228C154.918 296.422 152.528 296.223 150.537 294.63C147.749 293.038 145.758 290.847 144.564 288.06C143.767 285.272 142.971 282.485 142.174 279.697C141.378 276.91 140.78 274.122 140.382 271.335L138.59 259.986C138.59 255.207 136.399 250.229 132.019 245.052C131.222 244.256 130.227 243.26 129.032 242.066C128.235 240.871 127.439 239.677 126.642 238.482C125.049 236.093 123.656 233.504 122.461 230.717C121.664 227.929 120.868 225.142 120.071 222.354L119.474 218.173C119.872 210.607 122.66 204.036 127.837 198.461C134.209 191.293 141.178 186.714 148.745 184.723L154.719 182.931C157.108 182.134 157.905 180.74 157.108 178.749C156.71 176.758 156.312 174.767 155.914 172.776C155.515 170.387 155.117 168.197 154.719 166.206C154.321 162.223 153.922 158.44 153.524 154.856C153.524 150.874 153.126 146.892 152.329 142.91C152.329 142.91 152.329 141.914 152.329 139.923C151.931 135.543 151.334 131.163 150.537 126.782C150.139 122.004 149.542 117.225 148.745 112.446C147.949 108.464 146.356 105.278 143.966 102.889C140.78 99.7034 137.196 98.1106 133.213 98.1106C129.629 98.907 127.041 99.9026 125.448 101.097C121.465 103.885 117.682 106.672 114.098 109.46C110.513 111.849 106.531 114.039 102.15 116.03C99.3625 117.623 97.3713 119.415 96.1766 121.406C94.9818 124.194 93.588 126.981 91.995 129.769C90.8002 132.158 89.8046 134.946 89.0081 138.131C88.6099 140.122 88.0125 142.313 87.216 144.702C86.4195 146.693 85.623 148.684 84.8265 150.675C84.8265 151.472 84.6274 152.268 84.2292 153.064C83.8309 153.861 83.4327 154.657 83.0344 155.454C81.8397 158.241 80.8441 160.83 80.0476 163.219C79.2511 166.006 78.4546 168.794 77.6581 171.582C76.8616 174.369 76.0651 177.356 75.2686 180.541C74.4721 183.329 73.6756 186.714 72.8791 190.696C72.0826 194.678 71.2861 198.66 70.4896 202.642C69.6932 206.625 68.8967 210.607 68.1002 214.589C67.7019 216.182 67.3037 217.775 66.9054 219.367C66.9054 220.562 66.9054 222.155 66.9054 224.146C66.9054 225.739 66.9054 227.531 66.9054 229.522C66.9054 231.513 66.5072 233.504 65.7107 235.495C65.7107 236.69 65.5116 238.084 65.1133 239.677C65.1133 240.871 65.1133 242.066 65.1133 243.26C65.1133 244.455 65.1133 245.65 65.1133 246.844C65.5116 248.039 65.7107 249.632 65.7107 251.623C65.3124 254.411 65.3124 257.795 65.7107 261.778C66.1089 265.361 66.5072 268.945 66.9054 272.529L68.1002 277.308C68.8967 279.697 69.8923 282.286 71.087 285.073C72.2818 287.463 73.6756 289.653 75.2686 291.644C79.2511 296.024 83.0344 299.608 86.6186 302.396C90.2029 305.183 92.5923 306.975 93.7871 307.772C95.3801 308.17 98.566 308.369 103.345 308.369C106.929 308.369 110.513 308.966 114.098 310.161C115.691 310.559 117.682 311.555 120.071 313.147Z" fill="\(fill)"/>\
+        </svg>
+        """
+    }
+
+    // MARK: - Lucide copy icon
+
+    private func lucideCopyIcon(size: CGFloat, color: NSColor) -> NSImage {
+        let svg = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="\(Int(size))" height="\(Int(size))" \
+        viewBox="0 0 24 24" fill="none" stroke="\(color.hexString)" \
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>\
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>\
+        </svg>
+        """
+        guard let data = svg.data(using: .utf8), let img = NSImage(data: data) else {
+            return NSImage()
+        }
+        img.size = NSSize(width: size, height: size)
+        return img
+    }
+
+    private func copyStatusString() -> NSAttributedString {
+        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let color = NSColor.white.withAlphaComponent(0.5)
+        let para = NSMutableParagraphStyle()
+        para.alignment = .right
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: para]
+
+        let result = NSMutableAttributedString(string: "Click to copy  ", attributes: attrs)
+
+        let iconSize: CGFloat = 13
+        let attachment = NSTextAttachment()
+        attachment.image = lucideCopyIcon(size: iconSize, color: color)
+        attachment.bounds = CGRect(x: 0, y: (font.capHeight - iconSize) / 2, width: iconSize, height: iconSize)
+        result.append(NSAttributedString(attachment: attachment))
+
+        return result
+    }
+}

@@ -1,0 +1,81 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "RandomGif-arm64-apple-macosx26.0-debug.exe": ["<RandomGif-arm64-apple-macosx26.0-debug.exe>"]
+  "RandomGif-arm64-apple-macosx26.0-debug.module": ["<RandomGif-arm64-apple-macosx26.0-debug.module>"]
+  "main": ["<RandomGif-arm64-apple-macosx26.0-debug.exe>","<RandomGif-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<RandomGif-arm64-apple-macosx26.0-debug.exe>","<RandomGif-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif":
+    is-mutated: true
+commands:
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif-entitlement.plist"]
+    description: "Write auxiliary file /Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif-entitlement.plist"
+
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/sources"]
+    description: "Write auxiliary file /Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/sources"
+
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/AppDelegate.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifFetcher.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifPreloader.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifWindowController.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/main.swift.o"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.product/Objects.LinkFileList"
+
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<RandomGif-arm64-apple-macosx26.0-debug.exe>":
+    tool: phony
+    inputs: ["<RandomGif-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    outputs: ["<RandomGif-arm64-apple-macosx26.0-debug.exe>"]
+
+  "<RandomGif-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/AppDelegate.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifFetcher.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifPreloader.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifWindowController.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/main.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/Modules/RandomGif.swiftmodule"]
+    outputs: ["<RandomGif-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.RandomGif-arm64-apple-macosx26.0-debug.exe":
+    tool: shell
+    inputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/AppDelegate.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifFetcher.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifPreloader.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifWindowController.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/main.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.product/Objects.LinkFileList"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/RandomGif"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug","-o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif","-module-name","RandomGif","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_RandomGif_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Library/Developer/CommandLineTools/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx13.0","-Xlinker","-add_ast_path","-Xlinker","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/Modules/RandomGif.swiftmodule","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.RandomGif-arm64-apple-macosx26.0-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif-entitlement.plist"]
+    outputs: ["<RandomGif-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/RandomGif"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif-entitlement.plist","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif"]
+
+  "C.RandomGif-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/sources"]
+    outputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/AppDelegate.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifFetcher.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifPreloader.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/GifWindowController.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/main.swift.o","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/Modules/RandomGif.swiftmodule"]
+    description: "Compiling Swift Module 'RandomGif' (5 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","RandomGif","-emit-dependencies","-emit-module","-emit-module-path","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/Modules/RandomGif.swiftmodule","-output-file-map","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/output-file-map.json","-incremental","-c","@/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/RandomGif.build/sources","-I","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx13.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j12","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","RandomGif_main","-swift-version","5","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","mac_random_gif"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Package.swift","/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

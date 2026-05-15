@@ -1,0 +1,37 @@
+{
+  "": {
+    "dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/RandomGif.d",
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/RandomGif.o",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/master.swiftdeps"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.dia"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher.dia"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifPreloader.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifPreloader~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifPreloader.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifPreloader.dia"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifWindowController.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifWindowController~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifWindowController.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifWindowController.dia"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/main.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/main.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/main.dia"
+  }
+}
