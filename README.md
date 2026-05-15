@@ -6,7 +6,14 @@ Made by [John Kappa](https://johnkappa.com)
 
 ## Install
 
-Download `RandomGif.dmg`, open it, and drag RandomGif to your Applications folder. On first launch, right-click the app and choose **Open** to bypass Gatekeeper (the app is ad-hoc signed but not notarized).
+Download `RandomGif.dmg`, open it, and drag RandomGif to your Applications folder.
+
+The app is ad-hoc signed but not notarized, so macOS will block it on first launch. To fix this, open Terminal and run:
+
+```bash
+xattr -cr /Applications/RandomGif.app
+open /Applications/RandomGif.app
+```
 
 Requires **macOS 13 (Ventura)** or later. Universal binary — runs on both Apple Silicon and Intel Macs.
 
