@@ -61,6 +61,95 @@ private class ClickCaptureView: NSView {
 
 }
 
+// MARK: - Branding button with hover shimmer
+
+private class BrandingButton: NSView {
+    var onClicked: (() -> Void)?
+    private var contentLayer: CALayer!
+
+    private let leftPad: CGFloat = 14
+
+    init(frame: NSRect, icon: NSImage, iconSize: NSSize) {
+        super.init(frame: frame)
+        wantsLayer = true
+
+        let snapshot = renderBranding(frame: frame, icon: icon, iconSize: iconSize)
+        contentLayer = CALayer()
+        contentLayer.frame = bounds
+        contentLayer.contents = snapshot
+        contentLayer.opacity = 0.35
+        layer?.addSublayer(contentLayer)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func renderBranding(frame: NSRect, icon: NSImage, iconSize: NSSize) -> NSImage {
+        let pad = leftPad
+        let img = NSImage(size: frame.size, flipped: false) { rect in
+            let iconRect = NSRect(x: pad, y: (rect.height - iconSize.height) / 2, width: iconSize.width, height: iconSize.height)
+            icon.draw(in: iconRect)
+
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+                .foregroundColor: NSColor.white
+            ]
+            let str = NSAttributedString(string: "RandomGif", attributes: attrs)
+            let strSize = str.size()
+            let strOrigin = NSPoint(x: iconRect.maxX + 5, y: (rect.height - strSize.height) / 2)
+            str.draw(at: strOrigin)
+            return true
+        }
+        return img
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return frame.contains(point) ? self : nil
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas { removeTrackingArea(area) }
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self))
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onClicked?()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        contentLayer.removeAnimation(forKey: "pulse")
+
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        contentLayer.opacity = 1.0
+        CATransaction.commit()
+
+        let pulse = CABasicAnimation(keyPath: "opacity")
+        pulse.fromValue = 1.0
+        pulse.toValue = 0.6
+        pulse.duration = 0.8
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        pulse.beginTime = CACurrentMediaTime() + 0.15
+        contentLayer.add(pulse, forKey: "pulse")
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        contentLayer.removeAnimation(forKey: "pulse")
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.3)
+        contentLayer.opacity = 0.35
+        CATransaction.commit()
+    }
+}
+
 // MARK: - Window Controller
 
 class GifWindowController: NSWindowController, WKNavigationDelegate {
@@ -174,8 +263,6 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         clickCapture.onClicked = { [weak self] in self?.handleGifClick() }
         gifCard.addSubview(clickCapture)
 
-        gifCard.addSubview(clickCapture)
-
         // Bottom bar — branding left, status right
         let separator = NSView(frame: NSRect(x: margin, y: bottomH - 0.5, width: bounds.width - margin * 2, height: 0.5))
         separator.wantsLayer = true
@@ -188,31 +275,27 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
            let svgImg = NSImage(data: svgData) {
             let aspect = svgImg.size.width / svgImg.size.height
             let iconW = iconH * aspect
-            let iconView = NSImageView(frame: NSRect(x: margin + 2, y: (bottomH - iconH) / 2, width: iconW, height: iconH))
-            iconView.image = svgImg
-            iconView.imageScaling = .scaleProportionallyUpOrDown
-            iconView.alphaValue = 0.35
-            container.addSubview(iconView)
-
-            let titleLabel = NSTextField(labelWithString: "RandomGif")
-            titleLabel.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
-            titleLabel.textColor = NSColor.white.withAlphaComponent(0.35)
-            titleLabel.sizeToFit()
-            titleLabel.frame.origin = NSPoint(x: iconView.frame.maxX + 5, y: (bottomH - titleLabel.frame.height) / 2)
-            container.addSubview(titleLabel)
+            let brandingW = 10 + iconW + 5 + 75 + 10
+            let brandingBtn = BrandingButton(
+                frame: NSRect(x: 0, y: 0, width: brandingW, height: bottomH),
+                icon: svgImg,
+                iconSize: NSSize(width: iconW, height: iconH)
+            )
+            brandingBtn.onClicked = { [weak self] in self?.reloadGif() }
+            container.addSubview(brandingBtn)
         }
 
         statusLabel = NSTextField(labelWithString: "")
         let labelFont = NSFont.systemFont(ofSize: 12, weight: .medium)
         let labelH = labelFont.ascender - labelFont.descender + labelFont.leading
-        statusLabel.frame = NSRect(x: 0, y: (bottomH - labelH) / 2, width: bounds.width - margin - 2, height: labelH)
+        let statusX = bounds.width / 2
+        statusLabel.frame = NSRect(x: statusX, y: (bottomH - labelH) / 2, width: bounds.width - statusX - margin - 2, height: labelH)
         statusLabel.alignment = .right
         statusLabel.font = labelFont
         statusLabel.textColor = NSColor.white.withAlphaComponent(0.5)
         statusLabel.isSelectable = false
         container.addSubview(statusLabel)
 
-        spinner.startAnimation(nil)
         statusLabel.stringValue = "Loading…"
     }
 
@@ -238,29 +321,67 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
 
     // MARK: - Loading
 
+    private static let staticGifNames = [
+        "tv_static_01", "tv_static_02", "tv_static_03", "tv_static_04"
+    ]
+
+    private func showStatic() {
+        let name = Self.staticGifNames.randomElement() ?? "tv_static_04"
+        if let path = Bundle.main.path(forResource: name, ofType: "gif"),
+           let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
+            schemeHandler.gifData = data
+            let html = """
+            <!DOCTYPE html><html><head>
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>*{margin:0;padding:0}html,body{width:100%;height:100%;overflow:hidden;background:#000}
+            img{width:100%;height:100%;object-fit:cover;display:block;opacity:0.6}</style>
+            </head><body><img src="giflocal://static-\(UUID().uuidString).gif"></body></html>
+            """
+            webView.loadHTMLString(html, baseURL: nil)
+        } else {
+            webView.loadHTMLString("<html><body style='background:#000'></body></html>", baseURL: nil)
+        }
+        webView.alphaValue = 1
+        spinner.isHidden = true
+    }
+
     private func loadGif() {
         currentData = nil
         clickCapture.isEnabled = false
-        webView.alphaValue = 0
-        spinner.isHidden = false
-        spinner.startAnimation(nil)
         statusLabel.stringValue = "Loading…"
+        showStatic()
 
         Task {
-            // Use preloaded data if available — usually instant
             if let cached = await GifPreloader.shared.consume() {
                 displayGif(data: cached.data)
                 return
             }
 
-            // Nothing preloaded yet — fetch fresh while showing spinner
             do {
                 let url  = try await GifFetcher.fetchRandomGifURL()
                 let data = try await GifFetcher.fetchGifData(from: url)
                 displayGif(data: data)
             } catch {
-                spinner.stopAnimation(nil)
-                spinner.isHidden = true
+                statusLabel.stringValue = "Couldn't load — try again"
+            }
+        }
+    }
+
+    private func reloadGif() {
+        currentData = nil
+        clickCapture.isEnabled = false
+        statusLabel.stringValue = "Loading…"
+        showStatic()
+
+        Task { _ = await GifPreloader.shared.consume() }
+
+        Task {
+            do {
+                let url  = try await GifFetcher.fetchRandomGifURL()
+                let data = try await GifFetcher.fetchGifData(from: url)
+                displayGif(data: data)
+                Task { await GifPreloader.shared.kickoff() }
+            } catch {
                 statusLabel.stringValue = "Couldn't load — try again"
             }
         }
@@ -283,7 +404,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         img { width:100%; height:100%; object-fit:cover; display:block; }
         </style>
         </head>
-        <body><img src="giflocal://gif.gif"></body>
+        <body><img src="giflocal://gif-\(UUID().uuidString).gif"></body>
         </html>
         """
         webView.loadHTMLString(html, baseURL: nil)

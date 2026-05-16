@@ -6,17 +6,28 @@ enum GifFetchError: Error {
 
 enum GifFetcher {
 
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        return URLSession(configuration: config)
+    }()
+
     // MARK: - Public
 
     static func fetchRandomGifURL() async throws -> URL {
-        // Give reddit more weight since it covers the most variety
-        let pool: [() async throws -> URL] = [
+        var pool: [() async throws -> URL] = [
             fetchFromReddit,
             fetchFromReddit,
             fetchFromReddit,
             fetchFromDogAPI,
             fetchFromCatAPI,
         ]
+
+        if !Secrets.giphyAPIKey.isEmpty {
+            pool.append(fetchFromGiphy)
+            pool.append(fetchFromGiphy)
+        }
 
         for fetcher in pool.shuffled() {
             if let url = try? await fetcher() {
@@ -29,7 +40,7 @@ enum GifFetcher {
     static func fetchGifData(from url: URL) async throws -> Data {
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200, !data.isEmpty else {
             throw GifFetchError.noGifFound
         }
@@ -51,7 +62,7 @@ enum GifFetcher {
         request.setValue("RandomGifMacApp/1.0", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 12
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw GifFetchError.noGifFound
         }
@@ -87,7 +98,7 @@ enum GifFetcher {
 
         for _ in 0..<5 {
             let api = URL(string: "https://random.dog/woof.json")!
-            let (data, _) = try await URLSession.shared.data(from: api)
+            let (data, _) = try await session.data(from: api)
             let r = try JSONDecoder().decode(Response.self, from: data)
             if r.url.hasSuffix(".gif"), let url = URL(string: r.url) {
                 return url
@@ -96,11 +107,35 @@ enum GifFetcher {
         throw GifFetchError.noGifFound
     }
 
+    private static func fetchFromGiphy() async throws -> URL {
+        struct Original: Decodable { let url: String }
+        struct Images: Decodable { let original: Original }
+        struct GifData: Decodable { let images: Images }
+        struct Root: Decodable { let data: GifData }
+
+        let key = Secrets.giphyAPIKey
+        let api = URL(string: "https://api.giphy.com/v1/gifs/random?api_key=\(key)&rating=g")!
+
+        var request = URLRequest(url: api)
+        request.timeoutInterval = 12
+
+        let (data, response) = try await session.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            throw GifFetchError.noGifFound
+        }
+
+        let root = try JSONDecoder().decode(Root.self, from: data)
+        guard let url = URL(string: root.data.images.original.url) else {
+            throw GifFetchError.noGifFound
+        }
+        return url
+    }
+
     private static func fetchFromCatAPI() async throws -> URL {
         struct Cat: Decodable { let url: String }
 
         let api = URL(string: "https://api.thecatapi.com/v1/images/search?mime_types=gif&limit=1")!
-        let (data, _) = try await URLSession.shared.data(from: api)
+        let (data, _) = try await session.data(from: api)
         let cats = try JSONDecoder().decode([Cat].self, from: data)
 
         guard let first = cats.first, let url = URL(string: first.url) else {

@@ -17,3 +17,7 @@ AppIcon.iconset/
 # DMG output
 RandomGif.dmg
 RandomGif_temp.dmg
+
+# Secrets
+.env
+Sources/RandomGif/Secrets.swift
