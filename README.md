@@ -8,6 +8,8 @@ A macOS menu bar app that serves up random animated GIFs on demand. Click the ic
 
 ![Right-click menu](assets/ad_02.png)
 
+![Full screen example](assets/ad_03.png)
+
 Made by [John Kappa](https://johnkappa.com)
 
 ## Install
