@@ -216,7 +216,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
 
         let gifW = bounds.width - margin * 2
         let gifH = bounds.height - bottomH - margin
-        let gifFrame = NSRect(x: margin, y: bottomH, width: gifW, height: gifH)
+        let gifFrame = NSRect(x: margin, y: bottomH - 1, width: gifW, height: gifH + 1)
 
         let gifCard = NSView(frame: gifFrame)
         gifCard.wantsLayer = true
@@ -401,7 +401,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body { width:100%; height:100%; overflow:hidden; background:#000; }
-        img { width:100%; height:100%; object-fit:cover; display:block; }
+        img { position:absolute; top:-1px; left:-1px; width:calc(100% + 2px); height:calc(100% + 2px); object-fit:cover; display:block; }
         </style>
         </head>
         <body><img src="giflocal://gif-\(UUID().uuidString).gif"></body>
