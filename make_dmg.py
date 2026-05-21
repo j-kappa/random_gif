@@ -13,7 +13,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_PATH = os.path.expanduser("~/Applications/RandomGif.app")
 ICON_PNG = os.path.join(SCRIPT_DIR, "icon.png")
 ICNS_PATH = os.path.join(SCRIPT_DIR, "AppIcon.icns")
-DMG_OUT = os.path.join(SCRIPT_DIR, "RandomGif.dmg")
+DIST_DIR = os.path.join(SCRIPT_DIR, "dist")
+os.makedirs(DIST_DIR, exist_ok=True)
+DMG_OUT = os.path.join(DIST_DIR, "RandomGif-1.0.dmg")
 
 BG_W, BG_H = 660, 400
 ICON_SIZE = 128
