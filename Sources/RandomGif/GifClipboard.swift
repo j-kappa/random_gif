@@ -1,50 +1,41 @@
 import AppKit
 import UniformTypeIdentifiers
 
-/// Clipboard and drag helpers for sharing GIFs.
+/// Shares GIFs via a stable file reference on the pasteboard.
 ///
-/// Paste  → raw GIF bytes only (works in Twitter/X and avoids Slack's file-upload
-///          rejection dialog; Slack may show a static preview when pasting).
-/// Drag   → RandomGif.gif file (works in Slack desktop for animated GIFs).
+/// Slack and Twitter are Electron/Chromium apps. Raw GIF bytes get flattened to
+/// PNG on paste; a file reference (without image data) preserves the animation.
+/// The file lives in the app cache, not the user's Downloads folder.
 enum GifClipboard {
     private static let filename = "RandomGif.gif"
-    private static var keptFileURL: URL?
 
-    /// Writes the GIF to a stable temp path for drag-and-drop.
-    static func fileURL(for data: Data) -> URL? {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(filename)
-
-        guard (try? data.write(to: tempURL, options: .atomic)) != nil else {
-            return nil
-        }
-
-        if let old = keptFileURL, old != tempURL {
-            try? FileManager.default.removeItem(at: old)
-        }
-        keptFileURL = tempURL
-        return tempURL
+    static var shareURL: URL {
+        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("com.randomgif.app", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent(filename)
     }
 
-    /// Copies GIF bytes to the pasteboard — no file references.
     @discardableResult
-    static func copy(data: Data) -> Bool {
-        let gifType = NSPasteboard.PasteboardType(UTType.gif.identifier)
+    static func writeShareFile(data: Data) -> URL? {
+        let url = shareURL
+        guard (try? data.write(to: url, options: .atomic)) != nil else {
+            return nil
+        }
+        return url
+    }
 
-        let item = NSPasteboardItem()
-        item.setData(data, forType: gifType)
-        item.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+    @discardableResult
+    static func copy(data: Data) -> URL? {
+        guard let url = writeShareFile(data: data) else { return nil }
 
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.writeObjects([item])
-        return true
+        pb.writeObjects([url as NSURL])
+        return url
     }
 
     static func cleanup() {
-        if let url = keptFileURL {
-            try? FileManager.default.removeItem(at: url)
-            keptFileURL = nil
-        }
+        try? FileManager.default.removeItem(at: shareURL)
     }
 }

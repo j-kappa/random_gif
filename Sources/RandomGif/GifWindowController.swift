@@ -318,7 +318,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         clickCapture.onClicked = { [weak self] in self?.handleGifClick() }
         clickCapture.fileURLForDrag = { [weak self] in
             guard let data = self?.currentData else { return nil }
-            return GifClipboard.fileURL(for: data)
+            return GifClipboard.writeShareFile(data: data)
         }
         gifCard.addSubview(clickCapture)
 
@@ -526,7 +526,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
             return
         }
 
-        guard GifClipboard.copy(data: data) else {
+        guard GifClipboard.copy(data: data) != nil else {
             flash("Copy failed")
             return
         }
@@ -590,7 +590,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         para.alignment = .right
         let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: para]
 
-        let result = NSMutableAttributedString(string: "Click copy · drag to Slack  ", attributes: attrs)
+        let result = NSMutableAttributedString(string: "Click or drag to share  ", attributes: attrs)
 
         let iconSize: CGFloat = 13
         let attachment = NSTextAttachment()
