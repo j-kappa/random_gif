@@ -44,6 +44,13 @@ enum GifFetcher {
         guard (response as? HTTPURLResponse)?.statusCode == 200, !data.isEmpty else {
             throw GifFetchError.noGifFound
         }
+        // Reject anything that isn't a real GIF (CDN error pages, placeholders, etc.)
+        // GIF87a = 47 49 46 38 37 61  |  GIF89a = 47 49 46 38 39 61
+        guard data.count > 6,
+              data[0] == 0x47, data[1] == 0x49, data[2] == 0x46, data[3] == 0x38
+        else {
+            throw GifFetchError.noGifFound
+        }
         return data
     }
 
@@ -96,15 +103,15 @@ enum GifFetcher {
     private static func fetchFromDogAPI() async throws -> URL {
         struct Response: Decodable { let url: String }
 
-        for _ in 0..<5 {
-            let api = URL(string: "https://random.dog/woof.json")!
-            let (data, _) = try await session.data(from: api)
-            let r = try JSONDecoder().decode(Response.self, from: data)
-            if r.url.hasSuffix(".gif"), let url = URL(string: r.url) {
-                return url
-            }
+        // filter= excludes file types at the API level so the response is
+        // almost always a GIF, avoiding the old 5-request retry loop.
+        let api = URL(string: "https://random.dog/woof.json?filter=mp4,webm,jpg,jpeg,png,JPG,JPEG,PNG,MP4,WEBM")!
+        let (data, _) = try await session.data(from: api)
+        let r = try JSONDecoder().decode(Response.self, from: data)
+        guard r.url.lowercased().hasSuffix(".gif"), let url = URL(string: r.url) else {
+            throw GifFetchError.noGifFound
         }
-        throw GifFetchError.noGifFound
+        return url
     }
 
     private static func fetchFromGiphy() async throws -> URL {
