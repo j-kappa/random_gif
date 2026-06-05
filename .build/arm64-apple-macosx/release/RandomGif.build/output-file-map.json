@@ -2,7 +2,7 @@
   "": {
     "dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/RandomGif.d",
     "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/RandomGif.o",
-    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/master.swiftdeps"
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/primary.swiftdeps"
   },
   "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift": {
     "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.swift.o",
@@ -33,6 +33,12 @@
     "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/Secrets~partial.swiftmodule",
     "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/Secrets.swiftdeps",
     "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/Secrets.dia"
+  },
+  "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/UpdateChecker.swift": {
+    "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/UpdateChecker.swift.o",
+    "swiftmodule": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/UpdateChecker~partial.swiftmodule",
+    "swift-dependencies": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/UpdateChecker.swiftdeps",
+    "diagnostics": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/UpdateChecker.dia"
   },
   "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift": {
     "object": "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/main.swift.o",

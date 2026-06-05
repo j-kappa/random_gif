@@ -5,6 +5,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: GifWindowController?
     private var eventMonitor: Any?
 
+    private var pendingUpdateVersion: String? = nil
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
@@ -19,6 +21,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start fetching the first GIF immediately so it's ready when the user clicks
         Task { await GifPreloader.shared.kickoff() }
+
+        // Check for updates ~5 s after launch so startup is never delayed
+        UpdateChecker.shared.onUpdateAvailable = { [weak self] version in
+            self?.pendingUpdateVersion = version
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            UpdateChecker.shared.checkInBackground()
+        }
     }
 
     private func menuBarIcon() -> NSImage? {
@@ -86,6 +96,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        if let newVersion = pendingUpdateVersion {
+            let updateItem = NSMenuItem(
+                title: "Update Available — v\(newVersion) ↗",
+                action: #selector(openUpdatePage),
+                keyEquivalent: ""
+            )
+            updateItem.target = self
+            let updateAttrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+                .foregroundColor: NSColor.systemBlue
+            ]
+            updateItem.attributedTitle = NSAttributedString(
+                string: "Update Available — v\(newVersion) ↗",
+                attributes: updateAttrs
+            )
+            menu.addItem(updateItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+
         let creditItem = NSMenuItem(title: "Made by John Kappa", action: #selector(openCreditsLink), keyEquivalent: "")
         creditItem.target = self
         menu.addItem(creditItem)
@@ -105,6 +134,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let url = URL(string: "https://johnkappa.com") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    @objc private func openUpdatePage() {
+        UpdateChecker.shared.openReleasesPage()
     }
 
     private func showWindow() {

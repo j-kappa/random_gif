@@ -44,6 +44,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/UpdateChecker.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift"
         },
         {
@@ -64,6 +68,7 @@
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/GifPreloader.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/GifWindowController.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/Secrets.swift.o",
+        "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/UpdateChecker.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/main.swift.o"
       ],
       "otherArguments" : [
@@ -130,6 +135,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/UpdateChecker.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/main.swift.o"
         },
         {
@@ -144,6 +153,7 @@
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/Secrets.swift",
+        "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/UpdateChecker.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift"
       ],
       "tempsPath" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build",
@@ -166,6 +176,7 @@
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/Secrets.swift",
+      "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/UpdateChecker.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift",
       "-I",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/Modules",
@@ -257,6 +268,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/UpdateChecker.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/main.swift"
         }
       ],
@@ -288,6 +303,10 @@
         {
           "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/Secrets.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/x86_64-apple-macosx/release/RandomGif.build/UpdateChecker.swift.o"
         },
         {
           "kind" : "file",
