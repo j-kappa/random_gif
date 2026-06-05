@@ -163,6 +163,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     private var spinner: NSProgressIndicator!
     private var statusLabel: NSTextField!
     private var clickCapture: ClickCaptureView!
+    private var labelClickArea: ClickCaptureView!
     private var currentData: Data?
 
     // MARK: - Init
@@ -295,6 +296,14 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         statusLabel.textColor = NSColor.white.withAlphaComponent(0.5)
         statusLabel.isSelectable = false
         container.addSubview(statusLabel)
+
+        // Transparent overlay so clicks on the status label copy the GIF
+        labelClickArea = ClickCaptureView(frame: NSRect(
+            x: statusX, y: 0, width: bounds.width - statusX - margin - 2, height: bottomH
+        ))
+        labelClickArea.isEnabled = false
+        labelClickArea.onClicked = { [weak self] in self?.handleGifClick() }
+        container.addSubview(labelClickArea)
 
         statusLabel.stringValue = "Loading…"
     }

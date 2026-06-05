@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var eventMonitor: Any?
 
     private var pendingUpdateVersion: String? = nil
+    private var updateBadgeView: NSView?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -25,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Check for updates ~5 s after launch so startup is never delayed
         UpdateChecker.shared.onUpdateAvailable = { [weak self] version in
             self?.pendingUpdateVersion = version
+            self?.showUpdateBadge()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             UpdateChecker.shared.checkInBackground()
@@ -64,6 +66,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             showWindow()
         }
+    }
+
+    private func showUpdateBadge() {
+        guard let button = statusItem.button, updateBadgeView == nil else { return }
+
+        button.toolTip = "Random GIF — right-click for update"
+
+        let dotSize: CGFloat = 7
+        let dot = NSView()
+        dot.translatesAutoresizingMaskIntoConstraints = false
+        dot.wantsLayer = true
+        dot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        dot.layer?.cornerRadius = dotSize / 2
+        // White ring so the dot pops on both light and dark menu bars
+        dot.layer?.borderColor = NSColor.white.withAlphaComponent(0.6).cgColor
+        dot.layer?.borderWidth = 1
+        button.addSubview(dot)
+
+        NSLayoutConstraint.activate([
+            dot.widthAnchor.constraint(equalToConstant: dotSize),
+            dot.heightAnchor.constraint(equalToConstant: dotSize),
+            dot.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -1),
+            dot.topAnchor.constraint(equalTo: button.topAnchor, constant: 2),
+        ])
+
+        updateBadgeView = dot
     }
 
     private func showContextMenu() {
