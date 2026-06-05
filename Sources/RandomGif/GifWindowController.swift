@@ -42,11 +42,12 @@ private class GifSchemeHandler: NSObject, WKURLSchemeHandler {
     func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
 }
 
-// MARK: - Transparent click-capture overlay
+// MARK: - Click-only overlay (status label)
 
 private class ClickCaptureView: NSView {
     var onClicked: (() -> Void)?
     var isEnabled = true
+
     override func mouseDown(with event: NSEvent) {
         guard isEnabled else { return }
         onClicked?()
@@ -58,7 +59,56 @@ private class ClickCaptureView: NSView {
 
     override var acceptsFirstResponder: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
 
+// MARK: - Click-to-copy / drag-to-share overlay
+
+private class GifInteractionView: NSView, NSDraggingSource {
+    var onClicked: (() -> Void)?
+    var fileURLForDrag: (() -> URL?)?
+    var isEnabled = true
+
+    private var dragOrigin: NSPoint?
+    private var didStartDrag = false
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        dragOrigin = convert(event.locationInWindow, from: nil)
+        didStartDrag = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isEnabled, !didStartDrag, let origin = dragOrigin else { return }
+        let current = convert(event.locationInWindow, from: nil)
+        let dx = current.x - origin.x, dy = current.y - origin.y
+        guard (dx * dx + dy * dy) > 16 else { return }
+        guard let url = fileURLForDrag?() else { return }
+
+        didStartDrag = true
+        let item = NSDraggingItem(pasteboardWriter: url as NSURL)
+        item.setDraggingFrame(bounds, contents: nil)
+        beginDraggingSession(with: [item], event: event, source: self)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        defer {
+            dragOrigin = nil
+            didStartDrag = false
+        }
+        guard isEnabled, !didStartDrag else { return }
+        onClicked?()
+    }
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        .copy
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 // MARK: - Branding button with hover shimmer
@@ -162,7 +212,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     private var schemeHandler: GifSchemeHandler!
     private var spinner: NSProgressIndicator!
     private var statusLabel: NSTextField!
-    private var clickCapture: ClickCaptureView!
+    private var clickCapture: GifInteractionView!
     private var labelClickArea: ClickCaptureView!
     private var currentData: Data?
 
@@ -262,10 +312,14 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         spinner.appearance = NSAppearance(named: .vibrantDark)
         gifCard.addSubview(spinner)
 
-        clickCapture = ClickCaptureView(frame: gifCard.bounds)
+        clickCapture = GifInteractionView(frame: gifCard.bounds)
         clickCapture.autoresizingMask = [.width, .height]
         clickCapture.isEnabled = false
         clickCapture.onClicked = { [weak self] in self?.handleGifClick() }
+        clickCapture.fileURLForDrag = { [weak self] in
+            guard let data = self?.currentData else { return nil }
+            return GifClipboard.fileURL(for: data)
+        }
         gifCard.addSubview(clickCapture)
 
         // Bottom bar — branding left, status right
@@ -536,7 +590,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         para.alignment = .right
         let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: para]
 
-        let result = NSMutableAttributedString(string: "Click to copy  ", attributes: attrs)
+        let result = NSMutableAttributedString(string: "Click copy · drag to Slack  ", attributes: attrs)
 
         let iconSize: CGFloat = 13
         let attachment = NSTextAttachment()

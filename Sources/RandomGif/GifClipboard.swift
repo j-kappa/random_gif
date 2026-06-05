@@ -1,44 +1,43 @@
 import AppKit
 import UniformTypeIdentifiers
 
-/// Copies a GIF to the system pasteboard using two items so different apps
-/// pick the representation they understand:
-///   - File item → Slack desktop (uploads RandomGif.gif, keeps animation)
-///   - Data item → browsers like Twitter/X (reads image/gif bytes on paste)
+/// Clipboard and drag helpers for sharing GIFs.
+///
+/// Paste  → raw GIF bytes only (works in Twitter/X and avoids Slack's file-upload
+///          rejection dialog; Slack may show a static preview when pasting).
+/// Drag   → RandomGif.gif file (works in Slack desktop for animated GIFs).
 enum GifClipboard {
     private static let filename = "RandomGif.gif"
     private static var keptFileURL: URL?
 
-    @discardableResult
-    static func copy(data: Data) -> Bool {
+    /// Writes the GIF to a stable temp path for drag-and-drop.
+    static func fileURL(for data: Data) -> URL? {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(filename)
 
         guard (try? data.write(to: tempURL, options: .atomic)) != nil else {
-            return false
+            return nil
         }
 
         if let old = keptFileURL, old != tempURL {
             try? FileManager.default.removeItem(at: old)
         }
         keptFileURL = tempURL
+        return tempURL
+    }
 
+    /// Copies GIF bytes to the pasteboard — no file references.
+    @discardableResult
+    static func copy(data: Data) -> Bool {
         let gifType = NSPasteboard.PasteboardType(UTType.gif.identifier)
 
-        // Item 1: file reference — native apps upload this as RandomGif.gif
-        let fileItem = NSPasteboardItem()
-        fileItem.setData(tempURL.dataRepresentation, forType: .fileURL)
-        fileItem.setPropertyList([tempURL.path], forType: NSPasteboard.PasteboardType("NSFilenamesPboardType"))
-
-        // Item 2: raw GIF bytes — browsers read this as image/gif on paste
-        let dataItem = NSPasteboardItem()
-        dataItem.setData(data, forType: gifType)
-        dataItem.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+        let item = NSPasteboardItem()
+        item.setData(data, forType: gifType)
+        item.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
 
         let pb = NSPasteboard.general
         pb.clearContents()
-        pb.writeObjects([fileItem, dataItem])
-
+        pb.writeObjects([item])
         return true
     }
 

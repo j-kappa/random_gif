@@ -1,4 +1,6 @@
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 enum GifFetchError: Error {
     case noGifFound
@@ -44,14 +46,17 @@ enum GifFetcher {
         guard (response as? HTTPURLResponse)?.statusCode == 200, !data.isEmpty else {
             throw GifFetchError.noGifFound
         }
-        // Reject anything that isn't a real GIF (CDN error pages, placeholders, etc.)
-        // GIF87a = 47 49 46 38 37 61  |  GIF89a = 47 49 46 38 39 61
-        guard data.count > 6,
-              data[0] == 0x47, data[1] == 0x49, data[2] == 0x46, data[3] == 0x38
-        else {
+        guard Self.isValidGIF(data) else {
             throw GifFetchError.noGifFound
         }
         return data
+    }
+
+    private static func isValidGIF(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let type = CGImageSourceGetType(source) else { return false }
+        let id = type as String
+        return id == UTType.gif.identifier || id == "com.compuserve.gif"
     }
 
     // MARK: - Sources
