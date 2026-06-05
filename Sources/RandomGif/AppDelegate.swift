@@ -69,8 +69,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showContextMenu() {
         let menu = NSMenu()
 
-        let titleItem = NSMenuItem(title: "RandomGif", action: nil, keyEquivalent: "")
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        let titleItem = NSMenuItem(title: "RandomGif  v\(version)", action: nil, keyEquivalent: "")
         titleItem.isEnabled = false
+        let titleAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ]
+        let titleVersionAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .foregroundColor: NSColor.tertiaryLabelColor
+        ]
+        let titleString = NSMutableAttributedString(string: "RandomGif", attributes: titleAttrs)
+        titleString.append(NSAttributedString(string: "  v\(version)", attributes: titleVersionAttrs))
+        titleItem.attributedTitle = titleString
         menu.addItem(titleItem)
 
         let taglines = [
