@@ -357,6 +357,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     private func loadGif() {
         currentData = nil
         clickCapture.isEnabled = false
+        labelClickArea.isEnabled = false
         statusLabel.stringValue = "Loading…"
         showStatic()
 
@@ -379,6 +380,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     private func reloadGif() {
         currentData = nil
         clickCapture.isEnabled = false
+        labelClickArea.isEnabled = false
         statusLabel.stringValue = "Loading…"
         showStatic()
 
@@ -401,6 +403,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         currentData = data
         schemeHandler.gifData = data
         clickCapture.isEnabled = true
+        labelClickArea.isEnabled = true
 
         let html = """
         <!DOCTYPE html>
@@ -446,8 +449,10 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
             return
         }
 
-        let filename = "gif_\(UUID().uuidString).gif"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let tempURL = tempDir.appendingPathComponent("RandomGif.gif")
 
         guard (try? data.write(to: tempURL)) != nil else {
             flash("Copy failed")
