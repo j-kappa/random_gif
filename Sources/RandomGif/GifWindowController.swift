@@ -442,6 +442,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     }
 
     override func close() {
+        GifClipboard.cleanup()
         super.close()
     }
 
@@ -471,18 +472,17 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
             return
         }
 
-        // Write GIF data types only — no file URL.
-        // A file URL causes Slack (and some other apps) to route the paste through
-        // their file-upload path, which applies extension restrictions and rejects
-        // the GIF. Writing raw data lets apps paste it as an inline animated image.
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        let item = NSPasteboardItem()
-        item.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
-        item.setData(data, forType: NSPasteboard.PasteboardType("public.gif"))
-        pb.writeObjects([item])
+        guard GifClipboard.copy(data: data) else {
+            flash("Copy failed")
+            return
+        }
 
-        flash("✓  Copied!")
+        let sizeMB = Double(data.count) / (1024 * 1024)
+        if sizeMB > 15 {
+            flash("✓  Copied! (may be too large for Twitter)")
+        } else {
+            flash("✓  Copied!")
+        }
 
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.08
