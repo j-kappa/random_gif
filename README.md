@@ -39,8 +39,8 @@ Requires **macOS 13 (Ventura)** or later. Universal binary — works on Apple Si
 If that doesn't work, open Terminal and run:
 
 ```bash
-xattr -cr ~/Applications/RandomGif.app
-open ~/Applications/RandomGif.app
+xattr -cr /Applications/RandomGif.app
+open /Applications/RandomGif.app
 ```
 
 RandomGif lives in the **menu bar** (top-right of your screen). There's no Dock icon — look for the GIF logo up top.
