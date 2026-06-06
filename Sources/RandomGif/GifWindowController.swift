@@ -61,55 +61,6 @@ private class ClickCaptureView: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
-// MARK: - Click-to-copy / drag-to-share overlay
-
-private class GifInteractionView: NSView, NSDraggingSource {
-    var onClicked: (() -> Void)?
-    var fileURLForDrag: (() -> URL?)?
-    var isEnabled = true
-
-    private var dragOrigin: NSPoint?
-    private var didStartDrag = false
-
-    override func mouseDown(with event: NSEvent) {
-        guard isEnabled else { return }
-        dragOrigin = convert(event.locationInWindow, from: nil)
-        didStartDrag = false
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        guard isEnabled, !didStartDrag, let origin = dragOrigin else { return }
-        let current = convert(event.locationInWindow, from: nil)
-        let dx = current.x - origin.x, dy = current.y - origin.y
-        guard (dx * dx + dy * dy) > 16 else { return }
-        guard let url = fileURLForDrag?() else { return }
-
-        didStartDrag = true
-        let item = NSDraggingItem(pasteboardWriter: url as NSURL)
-        item.setDraggingFrame(bounds, contents: nil)
-        beginDraggingSession(with: [item], event: event, source: self)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        defer {
-            dragOrigin = nil
-            didStartDrag = false
-        }
-        guard isEnabled, !didStartDrag else { return }
-        onClicked?()
-    }
-
-    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-        .copy
-    }
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
-    }
-
-    override var acceptsFirstResponder: Bool { true }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-}
 
 // MARK: - Branding button with hover shimmer
 
@@ -212,7 +163,10 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     private var schemeHandler: GifSchemeHandler!
     private var spinner: NSProgressIndicator!
     private var statusLabel: NSTextField!
-    private var clickCapture: GifInteractionView!
+    private var clickCapture: ClickCaptureView!
+    // Static so the copied file survives this panel closing — the clipboard URL
+    // must stay valid after dismiss. Cleaned up only when the next copy happens.
+    private static var lastClipboardDir: URL?
     private var labelClickArea: ClickCaptureView!
     private var currentData: Data?
 
@@ -312,14 +266,10 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         spinner.appearance = NSAppearance(named: .vibrantDark)
         gifCard.addSubview(spinner)
 
-        clickCapture = GifInteractionView(frame: gifCard.bounds)
+        clickCapture = ClickCaptureView(frame: gifCard.bounds)
         clickCapture.autoresizingMask = [.width, .height]
         clickCapture.isEnabled = false
         clickCapture.onClicked = { [weak self] in self?.handleGifClick() }
-        clickCapture.fileURLForDrag = { [weak self] in
-            guard let data = self?.currentData else { return nil }
-            return GifClipboard.writeShareFile(data: data)
-        }
         gifCard.addSubview(clickCapture)
 
         // Bottom bar — branding left, status right
@@ -496,7 +446,6 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
     }
 
     override func close() {
-        GifClipboard.cleanup()
         super.close()
     }
 
@@ -526,17 +475,26 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
             return
         }
 
-        guard GifClipboard.copy(data: data) != nil else {
+        if let old = Self.lastClipboardDir {
+            try? FileManager.default.removeItem(at: old)
+        }
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        Self.lastClipboardDir = tempDir
+        let tempURL = tempDir.appendingPathComponent("RandomGif.gif")
+
+        guard (try? data.write(to: tempURL)) != nil else {
             flash("Copy failed")
             return
         }
 
-        let sizeMB = Double(data.count) / (1024 * 1024)
-        if sizeMB > 15 {
-            flash("✓  Copied! (may be too large for Twitter)")
-        } else {
-            flash("✓  Copied!")
-        }
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.writeObjects([tempURL as NSURL])
+        pb.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+
+        flash("✓  Copied!")
 
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.08
@@ -590,7 +548,7 @@ class GifWindowController: NSWindowController, WKNavigationDelegate {
         para.alignment = .right
         let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: para]
 
-        let result = NSMutableAttributedString(string: "Click or drag to share  ", attributes: attrs)
+        let result = NSMutableAttributedString(string: "Click to copy  ", attributes: attrs)
 
         let iconSize: CGFloat = 13
         let attachment = NSTextAttachment()

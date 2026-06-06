@@ -32,10 +32,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifClipboard.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift"
         },
         {
@@ -73,7 +69,6 @@
       "objects" : [
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppAssets.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.swift.o",
-        "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifClipboard.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifPreloader.swift.o",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifWindowController.swift.o",
@@ -133,10 +128,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifClipboard.swift.o"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifFetcher.swift.o"
         },
         {
@@ -168,7 +159,6 @@
       "sources" : [
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppAssets.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift",
-        "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifClipboard.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift",
         "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift",
@@ -193,7 +183,6 @@
       "-c",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppAssets.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/AppDelegate.swift",
-      "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifClipboard.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifPreloader.swift",
       "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifWindowController.swift",
@@ -278,10 +267,6 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifClipboard.swift"
-        },
-        {
-          "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/Sources/RandomGif/GifFetcher.swift"
         },
         {
@@ -321,10 +306,6 @@
         {
           "kind" : "file",
           "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/AppDelegate.swift.o"
-        },
-        {
-          "kind" : "file",
-          "name" : "/Users/johnkappa/Documents/projects/kappa/mac_random_gif/.build/arm64-apple-macosx/release/RandomGif.build/GifClipboard.swift.o"
         },
         {
           "kind" : "file",

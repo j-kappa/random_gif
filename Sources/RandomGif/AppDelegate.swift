@@ -187,7 +187,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.hideWindow()
+            guard let self, let panel = self.windowController?.window else { return }
+            // Ignore clicks inside the panel — otherwise mouseUp never fires
+            // and copy (which was deferred for drag support) silently fails.
+            if panel.frame.contains(NSEvent.mouseLocation) { return }
+            self.hideWindow()
         }
     }
 
