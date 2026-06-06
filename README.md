@@ -16,7 +16,7 @@ Made by [John Kappa](https://johnkappa.com)
 
 ## Download
 
-**[⬇ Download RandomGif-1.0.dmg](https://github.com/j-kappa/random_gif/releases/latest/download/RandomGif-1.0.dmg)**
+**[⬇ Download RandomGif-1.0.10.dmg](https://github.com/j-kappa/random_gif/releases/latest/download/RandomGif-1.0.10.dmg)**
 
 Requires **macOS 13 (Ventura)** or later. Universal binary — works on Apple Silicon and Intel Macs.
 
@@ -114,7 +114,7 @@ pip install pillow
 python3 make_dmg.py
 ```
 
-Output goes to `dist/RandomGif-1.0.dmg`.
+Output goes to `dist/RandomGif-1.0.10.dmg`.
 
 ---
 
